@@ -22,6 +22,7 @@ class BondLoadingAnimation extends HTMLElement {
         this._moverSpeedPixelsPerSec = parseInt(elem.getAttribute("moverSpeedPixelsPerSec") || 200, 10);
         const width = elem.getAttribute("boxWidth") || '100%';
         const moverHeightInPixels = parseInt(elem.getAttribute("moverHeightInPixels") || 50, 10);
+        this._moverWidth = moverHeightInPixels;
         const circleWidth = `${moverHeightInPixels}px`;
         const circleColor = elem.getAttribute("color") || 'white';
         
@@ -61,9 +62,22 @@ class BondLoadingAnimation extends HTMLElement {
         }
         `;
         
-        const bbox = this.getBoundingClientRect();
-        this._boxWidth = bbox.width;
-        this._moverWidth = moverHeightInPixels;
+        this.observeResize();
+    }
+    
+    resize(w) {
+        this._boxWidth = w || this.getBoundingClientRect().width;
+    }
+    
+    observeResize() {
+        const ro = new ResizeObserver(entries => {
+            const first = entries[0];
+            if (first) {
+                const cr = first.contentRect;
+                this.resize(cr.width);
+            }
+        });
+        ro.observe(this);
     }
     
     connectedCallback() {
