@@ -3,10 +3,8 @@ class BondLoadingAnimation extends HTMLElement {
         super();
         const shadow = this.attachShadow({ mode: "open" });
         
-        // const div = document.createElement("div");
         const style = document.createElement("style");
         shadow.appendChild(style);
-        // shadow.appendChild(div);
         
         this._container = shadow;
         this._previousTimestamp = 0;
@@ -14,19 +12,21 @@ class BondLoadingAnimation extends HTMLElement {
         this._boxWidth = 0;
         this._t = 0.0;
         this._lastFaderAt = 0;
-        this._moverSpeedPixelsPerSec = 100;
         this._requiredElapsed = 1000 / 30;
-        this._millisBetweenFaders = 750;
+        this._dotFrequencyMillis = 700;
+        this._moverSpeedPixelsPerSec = 200;
     }
     
     updateStyle(elem) {
-        const width = elem.getAttribute("width");
-        const heightInPixels = elem.getAttribute("heightInPixels");
-        const circleWidth = `${heightInPixels}px`;
-        const circleColor = elem.getAttribute("color");
+        this._dotFrequencyMillis = parseInt(elem.getAttribute("dotFrequencyMillis") || 700, 10);
+        this._moverSpeedPixelsPerSec = parseInt(elem.getAttribute("moverSpeedPixelsPerSec") || 200, 10);
+        const width = elem.getAttribute("boxWidth") || '100%';
+        const moverHeightInPixels = parseInt(elem.getAttribute("moverHeightInPixels") || 50, 10);
+        const circleWidth = `${moverHeightInPixels}px`;
+        const circleColor = elem.getAttribute("color") || 'white';
         
         const shadow = elem.shadowRoot;
-        shadow.querySelector("style").textContent = `
+        shadow.querySelector("style").textContent = /*css*/`
         :host {
             width: ${width};
             height: ${circleWidth};
@@ -43,14 +43,11 @@ class BondLoadingAnimation extends HTMLElement {
             position: absolute;
         }
         
-        #mover {
-        }
-        
         @keyframes bla-bond {
             2% {
                 opacity: 1;
             }
-            90% {
+            85% {
                 opacity: 1;
             }
             100% {
@@ -66,7 +63,7 @@ class BondLoadingAnimation extends HTMLElement {
         
         const bbox = this.getBoundingClientRect();
         this._boxWidth = bbox.width;
-        this._moverWidth = heightInPixels;
+        this._moverWidth = moverHeightInPixels;
     }
     
     connectedCallback() {
@@ -76,7 +73,7 @@ class BondLoadingAnimation extends HTMLElement {
     }
     
     createMover() {
-        const extant = this.mover;
+        const extant = this._mover;
         if (extant) {
             extant.remove();
         }
@@ -84,40 +81,8 @@ class BondLoadingAnimation extends HTMLElement {
         const div = document.createElement("div");
         div.id = "mover";
         div.className = "circle";
-        this.container.appendChild(div);
-        this.mover = div;
-    }
-    
-    get mover() {
-        return this._mover;
-    }
-    
-    set mover(m) {
-        this._mover = m;
-    }
-    
-    get container() {
-        return this._container;
-    }
-    
-    set container(c) {
-        this._container = c;
-    }
-    
-    get startTime() {
-        return this._startTime;
-    }
-    
-    set startTime(n) {
-        this._startTime = n;
-    }
-    
-    get previousTimestamp() {
-        return this._previousTimestamp;
-    }
-    
-    set previousTimestamp(n) {
-        this._previousTimestamp = n;
+        this._container.appendChild(div);
+        this._mover = div;
     }
     
     animate() {
@@ -127,11 +92,11 @@ class BondLoadingAnimation extends HTMLElement {
     step(timestamp) {
         this.animate();
         
-        const mover = this.mover;
-        const elapsed = timestamp - this.previousTimestamp;
+        const mover = this._mover;
+        const elapsed = timestamp - this._previousTimestamp;
         
         if (elapsed > this._requiredElapsed) {
-            this.previousTimestamp = timestamp;
+            this._previousTimestamp = timestamp;
             const tw = this._moverWidth / this._boxWidth;
             
             const moverSpeed = this._moverSpeedPixelsPerSec / this._boxWidth;
@@ -153,7 +118,7 @@ class BondLoadingAnimation extends HTMLElement {
             // const fp = (t - tw * 1.5) * 100;
             // const shouldCreateFader = parseInt(fp, 10) % 20 === 0;
             
-            if (timeSinceLastFader > this._millisBetweenFaders && shouldCreateFader) {
+            if (timeSinceLastFader > this._dotFrequencyMillis && shouldCreateFader) {
                 this._lastFaderAt = timestamp;
                 this.createFaderAt(t);
             }
@@ -161,12 +126,11 @@ class BondLoadingAnimation extends HTMLElement {
     }
     
     createFaderAt(t) {
-        console.log("fader at", t);
         const div = document.createElement("div");
         div.className = "circle fader";
         const xPos = t * this._boxWidth;
         div.style.transform = `translateX(${xPos}px)`;
-        this.container.appendChild(div);
+        this._container.appendChild(div);
     }
 }
 
